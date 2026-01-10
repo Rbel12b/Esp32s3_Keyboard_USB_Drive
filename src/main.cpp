@@ -6,6 +6,7 @@
 #include <LittleFS.h>
 #include <WiFi.h>
 #include <ESPAsyncWebServer.h>
+#include <map>
 
 #include "sdmmc_cmd.h"
 #include "driver/sdmmc_host.h"
@@ -60,7 +61,7 @@ void initSD()
     }
 
     // 4) Set up the SDMMC host struct for SPI mode
-    sdmmc_host_t host = SDSPI_HOST_DEFAULT();
+    static sdmmc_host_t host = SDSPI_HOST_DEFAULT();
     host.slot = (int)spi_handle; // **Use the handle returned above**
 
     // 5) Finally call sdmmc_card_init to detect the card
@@ -112,9 +113,9 @@ void msc_flush(void) {}
 
 /* ---------- HID helpers ---------- */
 
-uint8_t keyFromName(const String &k)
+uint8_t keyFromName(const std::string &k)
 {
-    if (k == "ENTER")
+    if (k == "RETURN")
         return KEY_RETURN;
     if (k == "ESC")
         return KEY_ESC;
@@ -122,10 +123,59 @@ uint8_t keyFromName(const String &k)
         return KEY_TAB;
     if (k == "DEL")
         return KEY_DELETE;
+    if (k == "UP")
+        return KEY_UP_ARROW;
+    if (k == "DOWN")
+        return KEY_DOWN_ARROW;
+    if (k == "LEFT")
+        return KEY_LEFT_ARROW;
+    if (k == "RIGHT")
+        return KEY_RIGHT_ARROW;
+    if (k == "BACKSPACE")
+        return KEY_BACKSPACE;
+    if (k == "PAGEUP")
+        return KEY_PAGE_UP;
+    if (k == "PAGEDOWN")
+        return KEY_PAGE_DOWN;
+    if (k == "HOME")
+        return KEY_HOME;
+    if (k == "END")
+        return KEY_END;
+    if (k == "CAPSLOCK")
+        return KEY_CAPS_LOCK;
+    if (k == "INS")
+        return KEY_INSERT;
+    if (k == "DEL")
+        return KEY_DELETE;
+#define CHECK_KEY_Fn(n) if (k == "F" #n) return KEY_F ## n;
+    CHECK_KEY_Fn(1);
+    CHECK_KEY_Fn(2);
+    CHECK_KEY_Fn(3);
+    CHECK_KEY_Fn(4);
+    CHECK_KEY_Fn(5);
+    CHECK_KEY_Fn(6);
+    CHECK_KEY_Fn(7);
+    CHECK_KEY_Fn(8);
+    CHECK_KEY_Fn(9);
+    CHECK_KEY_Fn(10);
+    CHECK_KEY_Fn(11);
+    CHECK_KEY_Fn(12);
+    CHECK_KEY_Fn(13);
+    CHECK_KEY_Fn(14);
+    CHECK_KEY_Fn(15);
+    CHECK_KEY_Fn(16);
+    CHECK_KEY_Fn(17);
+    CHECK_KEY_Fn(18);
+    CHECK_KEY_Fn(19);
+    CHECK_KEY_Fn(20);
+    CHECK_KEY_Fn(21);
+    CHECK_KEY_Fn(22);
+    CHECK_KEY_Fn(23);
+    CHECK_KEY_Fn(24);
     return k.length() == 1 ? k[0] : 0;
 }
 
-uint8_t modFromName(const String &k)
+uint8_t modFromName(const std::string &k)
 {
     if (k == "CTRL")
         return KEY_LEFT_CTRL;
@@ -135,35 +185,49 @@ uint8_t modFromName(const String &k)
         return KEY_LEFT_GUI;
     if (k == "SHIFT")
         return KEY_LEFT_SHIFT;
+    if (k == "SUPER")
+        return KEY_LEFT_GUI;
     return 0;
 }
 
-void sendCombo(const String &combo)
+void sendCombo(const std::string &combo)
 {
-    Keyboard.releaseAll();
+    uint8_t mods = 0;
+    uint8_t keys[6] = {0};
+    uint8_t keyCount = 0;
 
     int start = 0;
     while (true)
     {
-        int idx = combo.indexOf('+', start);
-        String tok = combo.substring(start, idx == -1 ? combo.length() : idx);
+        int idx = combo.find_first_of('+', start);
+        std::string tok = combo.substr(start, idx == -1 ? combo.length() : idx);
 
         uint8_t m = modFromName(tok);
         uint8_t k = keyFromName(tok);
 
-        if (m)
-            Keyboard.press(m);
-        else if (k)
-            Keyboard.press(k);
+        if (m) {
+            mods |= m;
+        } else if (k && keyCount < 6) {
+            keys[keyCount++] = k;
+        }
 
         if (idx == -1)
             break;
         start = idx + 1;
     }
+    KeyReport report;
+    report.modifiers = mods;
+    memcpy(report.keys, keys, 6);
+
+    Keyboard.sendReport(&report);
 
     delay(20);
+
     Keyboard.releaseAll();
+    log_d("Combo sent: %s", combo.c_str());
 }
+
+static std::map<AsyncWebServerRequest*, std::string> bodyMap;
 
 void onRequestBody(
     AsyncWebServerRequest *request,
@@ -172,29 +236,31 @@ void onRequestBody(
     size_t index,
     size_t total)
 {
-    // Allocate buffer on first chunk
+    // Append to the request-specific buffer
+    std::string &body = bodyMap[request];
+
+    // Reserve some space but cap it to reasonable size
+    // to avoid huge allocations if total is bogus.
     if (index == 0) {
-        request->_tempObject = new String();
-        ((String*)request->_tempObject)->reserve(total);
+        size_t cap = (total > 0 && total < 4096) ? total : 512;
+        body.reserve(cap);
     }
 
-    // Append this chunk
-    ((String*)request->_tempObject)->concat((const char*)data, len);
+    body.append((const char*)data, len);
 
     // Not finished yet
     if (index + len != total) {
         return;
     }
 
-    // Final body
-    String &body = *((String*)request->_tempObject);
+    // At this point, we have the full body
     log_i("%s", body.c_str());
 
     if (request->url() == "/text") {
-        Keyboard.print(body);
+        Keyboard.print(body.c_str());
     }
     else if (request->url() == "/combo") {
-        sendCombo(body.c_str()); // OK: body lives until function ends
+        sendCombo(body);
     }
     else if (request->url() == "/hex") {
         uint8_t v = strtoul(body.c_str(), nullptr, 16);
@@ -203,10 +269,9 @@ void onRequestBody(
 
     request->send(200, "text/plain", "true");
 
-    delete (String*)request->_tempObject;
-    request->_tempObject = nullptr;
+    // Remove request from map
+    bodyMap.erase(request);
 }
-
 
 void setup()
 {
@@ -265,4 +330,5 @@ void setup()
 void loop()
 {
     vTaskDelay(100 / portTICK_PERIOD_MS);
+    heap_caps_check_integrity_all(true);
 }
