@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>ESP32 USB Keyboard</title>
+<style>
+body { font-family: sans-serif; max-width: 520px; margin:auto; }
+button { margin: 4px; }
+input { width: 100%; margin: 6px 0; }
+</style>
+</head>
+<body>
+
+<h2>USB Keyboard</h2>
+
+<input id="text" placeholder="Text">
+<button onclick="post('/text', text.value)">Send</button>
+
+<h3>Modifiers</h3>
+<button onclick="combo('CTRL','C')">Ctrl+C</button>
+<button onclick="combo('ALT','TAB')">Alt+Tab</button>
+<button onclick="combo('WIN','R')">Win+R</button>
+<button onclick="combo('CTRL','ALT','DEL')">Ctrl+Alt+Del</button>
+
+<h3>Single keys</h3>
+<button onclick="key('ENTER')">Enter</button>
+<button onclick="key('ESC')">Esc</button>
+<button onclick="key('TAB')">Tab</button>
+
+<h3>Raw HID (one ASCII byte)</h3>
+<input id="hex" placeholder="41">
+<button onclick="post('/hex', hex.value)">Send</button>
+
+<script>
+function post(url, body) {
+  fetch(url, { method: "POST", body });
+}
+function key(k) {
+  post("/key", k);
+}
+function combo(...keys) {
+  post("/combo", keys.join("+"));
+}
+</script>
+
+</body>
+</html>
