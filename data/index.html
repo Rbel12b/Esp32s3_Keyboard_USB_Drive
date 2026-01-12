@@ -91,7 +91,7 @@
             const keys = pressedKeys
                 .slice(0, MAX_KEYS)
                 .map(k => k.toString(16).padStart(2, "0"))
-                .join("")
+                .join(",")
                 .padEnd(12, "0"); // 6 keys * 2 hex chars
 
             const body =
