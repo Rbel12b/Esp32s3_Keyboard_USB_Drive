@@ -88,11 +88,14 @@
 
         /* ---------------- SEND REPORT ---------------- */
         function sendReport() {
-            const keys = pressedKeys
+            let reportKeys = pressedKeys;
+            while (reportKeys.length < MAX_KEYS) {
+                reportKeys.push(0);
+            }
+            const keys = reportKeys
                 .slice(0, MAX_KEYS)
                 .map(k => k.toString(16).padStart(2, "0"))
                 .join(",")
-                .padEnd(12, "0"); // 6 keys * 2 hex chars
 
             const body =
                 keys + "|" +
