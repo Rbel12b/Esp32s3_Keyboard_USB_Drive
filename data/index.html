@@ -88,7 +88,7 @@
 
         /* ---------------- SEND REPORT ---------------- */
         function sendReport() {
-            let reportKeys = pressedKeys;
+            let reportKeys = pressedKeys.slice();
             while (reportKeys.length < MAX_KEYS) {
                 reportKeys.push(0);
             }
