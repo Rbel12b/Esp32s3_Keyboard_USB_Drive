@@ -1,176 +1,273 @@
 <!DOCTYPE html>
-<html>
+<html lang="hu">
 
 <head>
-    <meta charset="utf-8">
-    <title>ESP32 USB Keyboard</title>
+    <meta charset="UTF-8">
+    <title>HU 105 HID Keyboard</title>
+
     <style>
         body {
+            background: #111;
+            color: #ddd;
             font-family: sans-serif;
-            max-width: 600px;
-            margin: auto;
-            padding: 16px;
-            background: #f5f5f5;
-        }
-
-        h2 {
-            color: #333;
-            border-bottom: 2px solid #007bff;
-            padding-bottom: 8px;
-        }
-
-        h3 {
-            color: #555;
-            margin-top: 20px;
-        }
-
-        input {
-            width: 100%;
-            margin: 8px 0;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            box-sizing: border-box;
-        }
-
-        .section {
-            background: white;
-            border-radius: 8px;
-            padding: 12px;
-            margin: 12px 0;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        .scrollable {
             display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            max-height: 200px;
-            overflow-y: auto;
-            padding: 4px;
+            justify-content: center;
         }
 
-        button {
-            padding: 8px 12px;
+        .keyboard {
+            background: #000;
+            padding: 12px;
+            border-radius: 10px;
+        }
+
+        .row {
+            display: flex;
+            margin-bottom: 4px;
+        }
+
+        .key {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            color: #ddd;
             margin: 2px;
-            background: #007bff;
-            color: white;
-            border: none;
-            border-radius: 4px;
+            padding: 6px;
+            min-width: 40px;
+            height: 40px;
+            border-radius: 5px;
             cursor: pointer;
-            font-size: 14px;
-            white-space: nowrap;
+            font-size: 12px;
         }
 
-        button:hover {
-            background: #0056b3;
+        .key.wide {
+            min-width: 80px;
         }
 
-        button:active {
-            background: #003d82;
+        .key.xwide {
+            min-width: 110px;
+        }
+
+        .key.space {
+            min-width: 260px;
+        }
+
+        .key.mod.active {
+            outline: 2px solid red;
+        }
+
+        .key span.alt {
+            display: block;
+            font-size: 10px;
+            color: #aaa;
+        }
+
+        .key.pressed {
+            background: #333;
         }
     </style>
 </head>
 
 <body>
-
-    <h2>USB Keyboard</h2>
-
-    <div class="section">
-        <input id="text" placeholder="Text">
-        <button onclick="post('/text', text.value)">Send Text</button>
-    </div>
-
-    <div class="section">
-        <h3>Modifier Combos</h3>
-        <div class="scrollable">
-            <button onclick="combo('CTRL','C')">Ctrl+C</button>
-            <button onclick="combo('CTRL','V')">Ctrl+V</button>
-            <button onclick="combo('CTRL','X')">Ctrl+X</button>
-            <button onclick="combo('CTRL','Z')">Ctrl+Z</button>
-            <button onclick="combo('CTRL','A')">Ctrl+A</button>
-            <button onclick="combo('ALT','TAB')">Alt+Tab</button>
-            <button onclick="combo('WIN','R')">Win+R</button>
-            <button onclick="combo('CTRL','ALT','DEL')">Ctrl+Alt+Del</button>
-            <button onclick="combo('SHIFT','TAB')">Shift+Tab</button>
-        </div>
-    </div>
-
-    <div class="section">
-        <h3>Single Keys</h3>
-        <div class="scrollable">
-            <button onclick="key('RETURN')">Return</button>
-            <button onclick="key('ESC')">Esc</button>
-            <button onclick="key('TAB')">Tab</button>
-            <button onclick="key('BACKSPACE')">Backspace</button>
-            <button onclick="key('DEL')">Delete</button>
-            <button onclick="key('INS')">Insert</button>
-            <button onclick="key('HOME')">Home</button>
-            <button onclick="key('END')">End</button>
-            <button onclick="key('PAGEUP')">Page Up</button>
-            <button onclick="key('PAGEDOWN')">Page Down</button>
-            <button onclick="key('UP')">↑</button>
-            <button onclick="key('DOWN')">↓</button>
-            <button onclick="key('LEFT')">←</button>
-            <button onclick="key('RIGHT')">→</button>
-            <button onclick="key('CAPSLOCK')">Caps Lock</button>
-        </div>
-    </div>
-
-    <div class="section">
-        <h3>Function Keys</h3>
-        <div class="scrollable">
-            <button onclick="key('F1')">F1</button>
-            <button onclick="key('F2')">F2</button>
-            <button onclick="key('F3')">F3</button>
-            <button onclick="key('F4')">F4</button>
-            <button onclick="key('F5')">F5</button>
-            <button onclick="key('F6')">F6</button>
-            <button onclick="key('F7')">F7</button>
-            <button onclick="key('F8')">F8</button>
-            <button onclick="key('F9')">F9</button>
-            <button onclick="key('F10')">F10</button>
-            <button onclick="key('F11')">F11</button>
-            <button onclick="key('F12')">F12</button>
-            <button onclick="key('F13')">F13</button>
-            <button onclick="key('F14')">F14</button>
-            <button onclick="key('F15')">F15</button>
-            <button onclick="key('F16')">F16</button>
-            <button onclick="key('F17')">F17</button>
-            <button onclick="key('F18')">F18</button>
-            <button onclick="key('F19')">F19</button>
-            <button onclick="key('F20')">F20</button>
-            <button onclick="key('F21')">F21</button>
-            <button onclick="key('F22')">F22</button>
-            <button onclick="key('F23')">F23</button>
-            <button onclick="key('F24')">F24</button>
-        </div>
-    </div>
-
-    <div class="section">
-        <h3>Raw HID (ASCII byte hex)</h3>
-        <input id="hex" placeholder="41">
-        <button onclick="post('/hex', hex.value)">Send Hex</button>
-    </div>
-
-    <div class="section">
-        <h3>Custom Key Combo</h3>
-        <input id="customCombo" placeholder="e.g., CTRL+ALT+S">
-        <button onclick="post('/combo', document.getElementById('customCombo').value)">Send Custom Combo</button>
-    </div>
+    <div class="keyboard" id="kb"></div>
 
     <script>
-        function post(url, body) {
-            fetch(url, { method: "POST", body });
-        }
-        function key(k) {
-            post("/combo", k);
-        }
-        function combo(...keys) {
-            post("/combo", keys.join("+"));
-        }
-    </script>
+        /* ---------------- HID MOD BITS ---------------- */
+        const MOD = {
+            LCTRL: 0x01,
+            LSHIFT: 0x02,
+            LALT: 0x04,
+            LGUI: 0x08,
+            RCTRL: 0x10,
+            RSHIFT: 0x20,
+            RALT: 0x40, // AltGr
+            RGUI: 0x80
+        };
 
+        let modState = 0;
+        const MAX_KEYS = 6;
+        let pressedKeys = [];
+
+        /* ---------------- SEND REPORT ---------------- */
+        function sendReport() {
+            const keys = pressedKeys
+                .slice(0, MAX_KEYS)
+                .map(k => k.toString(16).padStart(2, "0"))
+                .join("")
+                .padEnd(12, "0"); // 6 keys * 2 hex chars
+
+            const body =
+                keys + "|" +
+                modState.toString(16).padStart(2, "0");
+
+            fetch("/report", {
+                method: "POST",
+                body
+            });
+        }
+
+        function keyDown(code) {
+            if (pressedKeys.includes(code)) return;
+            if (pressedKeys.length < MAX_KEYS) {
+                pressedKeys.push(code);
+                sendReport();
+            }
+        }
+
+        function keyUp(code) {
+            const i = pressedKeys.indexOf(code);
+            if (i !== -1) {
+                pressedKeys.splice(i, 1);
+                sendReport();
+            }
+        }
+
+
+        /* ---------------- MOD TOGGLE ---------------- */
+        function mod(bit, btn) {
+            modState ^= bit;
+            btn.classList.toggle("active");
+            sendReport();
+            render();
+        }
+
+        /* ---------------- KEY DEFINITIONS ---------------- */
+        /* label, altLabel, hidCode */
+        const rows = [
+            [
+                ["Esc", "", 0x29],
+                ["0", "¬", 0x35, "§", "¬"], ["1", "~", 0x1E, "'", "~"], ["2", "ˇ", 0x1F, "\"", "ˇ"], ["3", "^", 0x20, "+", "^"],
+                ["4", "˘", 0x21, "!", "˘"], ["5", "°", 0x22, "%", "°"], ["6", "˛", 0x23, "/", "˛"], ["7", "`", 0x24, "=", "`"],
+                ["8", "˙", 0x25, "(", "˙"], ["9", "´", 0x26, ")", "´"],
+                ["ö", "˝", 0x27, "Ö", "˝"], ["ü", "¨", 0x2D, "Ü", "¨"], ["ó", "¸", 0x2E, "Ó", "¸"],
+                ["Back", "", 0x2A, "wide"]
+            ],
+            [
+                ["Tab", "", 0x2B, "wide"],
+                ["q", "\\", 0x14, "Q", "Ω"], ["w", "|", 0x1A, "W", "§"], ["e", "Ä", 0x08, "E", "E"], ["r", "¶", 0x15, "R", "®"],
+                ["t", "ŧ", 0x17, "T", "Ŧ"], ["z", "–", 0x1D, "Z", "¥"], ["u", "€", 0x18, "U", "↑"],
+                ["i", "Í", 0x0C, "I", "í"], ["o", "„", 0x12, "O", "Ø"], ["p", "”", 0x13, "P", "Þ"],
+                ["ő", "÷", 0x2F, "Ő", "°"], ["ú", "×", 0x30, "Ú", "¯"], ["ű", "¤", 0x31, "Ű", "˘"]
+            ],
+            [
+                ["Caps", "", 0x39, "xwide"],
+                ["a", "ä", 0x04, "a", "Ä"], ["s", "đ", 0x16, "S", "ẞ"], ["d", "Đ", 0x07, "D", "Ð"], ["f", "[", 0x09, "F", "ª"],
+                ["g", "]", 0x0A, "G", "Ŋ"], ["h", "ħ", 0x0B, "H", "Ħ"], ["j", "í", 0x0D, "J", "Í"],
+                ["k", "ł", 0x0E, "K", "&"], ["l", "Ł", 0x0F, "L", "Ł"],
+                ["é", "$", 0x31, "É", "¢"], ["á", "ß", 0x2E, "Á", "ẞ"],
+                ["Enter", "", 0x28, "xwide"]
+            ],
+            [
+                ["Shift", "", MOD.LSHIFT, "mod", "xwide"],
+                ["í", "<", 0x64, "Í", ">"],
+                ["y", ">", 0x1C, "Y", "<"], ["x", "#", 0x1B, "X", ">"], ["c", "&", 0x06, "C", "©"], ["v", "@", 0x19, "V", "‚"],
+                ["b", "{", 0x05, "B", "‘"], ["n", "}", 0x11, "N", "’"], ["m", "<", 0x10, "M", "º"],
+                [",", ";", 0x36, "?", "×"], [".", ">", 0x37, ":", "÷"], ["-", "*", 0x38, "_", "˙"],
+                ["Shift", "", MOD.RSHIFT, "mod", "xwide"]
+            ],
+            [
+                ["Ctrl", "", MOD.LCTRL, "mod", "wide"],
+                ["Win", "", MOD.LGUI, "mod", "wide"],
+                ["Alt", "", MOD.LALT, "mod", "wide"],
+                ["Space", "", 0x2C, "space"],
+                ["AltGr", "", MOD.RALT, "mod", "wide"],
+                ["Menu", "", 0x65, "wide"],
+                ["Ctrl", "", MOD.RCTRL, "mod", "wide"]
+            ],
+            [
+                ["Ins", "", 0x49],
+                ["Home", "", 0x4A],
+                ["PgUp", "", 0x4B]
+            ],
+            [
+                ["Del", "", 0x4C],
+                ["End", "", 0x4D],
+                ["PgDn", "", 0x4E]
+            ],
+            [
+                ["", "", null],       // spacer
+                ["↑", "", 0x52],
+                ["", "", null]
+            ],
+            [
+                ["←", "", 0x50],
+                ["↓", "", 0x51],
+                ["→", "", 0x4F]
+            ]
+        ];
+
+        /* ---------------- RENDER ---------------- */
+        function render() {
+            const kb = document.getElementById("kb");
+            kb.innerHTML = "";
+
+            const shifted = modState & (MOD.LSHIFT | MOD.RSHIFT);
+            const ralt = modState & MOD.RALT;
+
+            rows.forEach(row => {
+                const r = document.createElement("div");
+                r.className = "row";
+
+                row.forEach(k => {
+                    const b = document.createElement("button");
+                    b.className = "key";
+
+                    if (k.includes("wide")) b.classList.add("wide");
+                    if (k.includes("xwide")) b.classList.add("xwide");
+                    if (k.includes("space")) b.classList.add("space");
+
+                    if (k[3] === "mod") {
+                        b.classList.add("mod");
+                        if (modState & k[2]) b.classList.add("active");
+                        b.textContent = k[0];
+                        b.onclick = () => mod(k[2], b);
+                    } else {
+                        let shift = "";
+                        if (k[3] && k[3].length === 1) {
+                            shift = k[3];
+                        }
+                        const main = k[0];
+                        const alt = k[1];
+                        let altshift = k[4];
+                        if (altshift && altshift.length !== 1) {
+                            altshift = "";
+                        }
+
+                        b.innerHTML = shifted ? ((ralt && altshift) ? altshift : (shift ? shift : main)) : ((ralt && alt) ? alt : main);
+
+                        if (k[2] !== null) {
+                            b.onmousedown = () => {
+                                b.classList.add("pressed");
+                                keyDown(k[2]);
+                            };
+                            b.onmouseup = () => {
+                                b.classList.remove("pressed");
+                                keyUp(k[2]);
+                            };
+                            b.onmouseleave = () => {
+                                b.classList.remove("pressed");
+                                keyUp(k[2]);
+                            };
+                            b.ontouchstart = e => {
+                                e.preventDefault(); keyDown(k[2]);
+                                b.classList.add("pressed");
+                            };
+                            b.ontouchend = e => {
+                                e.preventDefault(); keyUp(k[2]);
+                                b.classList.remove("pressed");
+                            };
+                        } else {
+                            b.style.visibility = "hidden";
+                        }
+                    }
+
+                    r.appendChild(b);
+                });
+
+                kb.appendChild(r);
+            });
+        }
+
+        render();
+    </script>
 </body>
 
 </html>

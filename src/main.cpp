@@ -113,118 +113,44 @@ void msc_flush(void) {}
 
 /* ---------- HID helpers ---------- */
 
-uint8_t keyFromName(const std::string &k)
+
+/**
+ * @brief Handle incoming request body
+ * @param body Full body as string, formatted like "<keys-in-hex>|<mods-in-hex>"
+ */
+void report(const std::string &body)
 {
-    if (k == "RETURN")
-        return KEY_RETURN;
-    if (k == "ESC")
-        return KEY_ESC;
-    if (k == "TAB")
-        return KEY_TAB;
-    if (k == "DEL")
-        return KEY_DELETE;
-    if (k == "UP")
-        return KEY_UP_ARROW;
-    if (k == "DOWN")
-        return KEY_DOWN_ARROW;
-    if (k == "LEFT")
-        return KEY_LEFT_ARROW;
-    if (k == "RIGHT")
-        return KEY_RIGHT_ARROW;
-    if (k == "BACKSPACE")
-        return KEY_BACKSPACE;
-    if (k == "PAGEUP")
-        return KEY_PAGE_UP;
-    if (k == "PAGEDOWN")
-        return KEY_PAGE_DOWN;
-    if (k == "HOME")
-        return KEY_HOME;
-    if (k == "END")
-        return KEY_END;
-    if (k == "CAPSLOCK")
-        return KEY_CAPS_LOCK;
-    if (k == "INS")
-        return KEY_INSERT;
-    if (k == "DEL")
-        return KEY_DELETE;
-#define CHECK_KEY_Fn(n) if (k == "F" #n) return KEY_F ## n;
-    CHECK_KEY_Fn(1);
-    CHECK_KEY_Fn(2);
-    CHECK_KEY_Fn(3);
-    CHECK_KEY_Fn(4);
-    CHECK_KEY_Fn(5);
-    CHECK_KEY_Fn(6);
-    CHECK_KEY_Fn(7);
-    CHECK_KEY_Fn(8);
-    CHECK_KEY_Fn(9);
-    CHECK_KEY_Fn(10);
-    CHECK_KEY_Fn(11);
-    CHECK_KEY_Fn(12);
-    CHECK_KEY_Fn(13);
-    CHECK_KEY_Fn(14);
-    CHECK_KEY_Fn(15);
-    CHECK_KEY_Fn(16);
-    CHECK_KEY_Fn(17);
-    CHECK_KEY_Fn(18);
-    CHECK_KEY_Fn(19);
-    CHECK_KEY_Fn(20);
-    CHECK_KEY_Fn(21);
-    CHECK_KEY_Fn(22);
-    CHECK_KEY_Fn(23);
-    CHECK_KEY_Fn(24);
-    return k.length() == 1 ? k[0] : 0;
-}
-
-uint8_t modFromName(const std::string &k)
-{
-    if (k == "CTRL")
-        return KEY_LEFT_CTRL;
-    if (k == "ALT")
-        return KEY_LEFT_ALT;
-    if (k == "WIN")
-        return KEY_LEFT_GUI;
-    if (k == "SHIFT")
-        return KEY_LEFT_SHIFT;
-    if (k == "SUPER")
-        return KEY_LEFT_GUI;
-    return 0;
-}
-
-void sendCombo(const std::string &combo)
-{
-    uint8_t mods = 0;
-    uint8_t keys[6] = {0};
-    uint8_t keyCount = 0;
-
-    int start = 0;
-    while (true)
-    {
-        int idx = combo.find_first_of('+', start);
-        std::string tok = combo.substr(start, idx == -1 ? combo.length() : idx);
-
-        uint8_t m = modFromName(tok);
-        uint8_t k = keyFromName(tok);
-
-        if (m) {
-            mods |= m;
-        } else if (k && keyCount < 6) {
-            keys[keyCount++] = k;
-        }
-
-        if (idx == -1)
-            break;
-        start = idx + 1;
+    size_t sep = body.find('|');
+    if (sep == std::string::npos) {
+        log_e("Invalid report format");
+        return;
     }
-    KeyReport report;
-    report.modifiers = mods;
-    memcpy(report.keys, keys, 6);
 
-    Keyboard.sendReport(&report);
+    std::string keys_str = body.substr(0, sep);
+    std::string mods_str = body.substr(sep + 1);
 
-    delay(20);
+    // Parse keys
+    uint8_t keys[6] = {0};
+    size_t key_count = 0;
+    size_t pos = 0;
+    while (pos < keys_str.length() && key_count < 6) {
+        size_t next_pos = keys_str.find(',', pos);
+        std::string key_hex = (next_pos == std::string::npos) ? 
+                              keys_str.substr(pos) : 
+                              keys_str.substr(pos, next_pos - pos);
+        keys[key_count++] = (uint8_t)strtol(key_hex.c_str(), nullptr, 16);
+        if (next_pos == std::string::npos) break;
+        pos = next_pos + 1;
+    }
 
-    Keyboard.releaseAll();
-    log_d("Combo sent: %s", combo.c_str());
+    // Parse mods
+    uint8_t mods = (uint8_t)strtol(mods_str.c_str(), nullptr, 16);
+
+    // Prepare and send report
+    KeyReport keysreport;
+    keysreport.modifiers = mods;
+    memcpy(keysreport.keys, keys, 6);
+    Keyboard.sendReport(&keysreport);
 }
 
 static std::map<AsyncWebServerRequest*, std::string> bodyMap;
@@ -256,15 +182,8 @@ void onRequestBody(
     // At this point, we have the full body
     log_i("%s", body.c_str());
 
-    if (request->url() == "/text") {
-        Keyboard.print(body.c_str());
-    }
-    else if (request->url() == "/combo") {
-        sendCombo(body);
-    }
-    else if (request->url() == "/hex") {
-        uint8_t v = strtoul(body.c_str(), nullptr, 16);
-        Keyboard.write(v);
+    if (request->url() == "/report") {
+        report(body);
     }
 
     request->send(200, "text/plain", "true");
