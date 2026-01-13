@@ -84,10 +84,12 @@ void initSD()
 
 int32_t msc_read(uint32_t lba, uint32_t offset, void *buffer, uint32_t bufsize)
 {
-    if (offset != 0) return -1;
+    if (offset != 0)
+        return -1;
 
     uint32_t sector_size = sdcard->csd.sector_size;
-    if (bufsize % sector_size != 0) return -1;
+    if (bufsize % sector_size != 0)
+        return -1;
 
     uint32_t count = bufsize / sector_size;
 
@@ -97,10 +99,12 @@ int32_t msc_read(uint32_t lba, uint32_t offset, void *buffer, uint32_t bufsize)
 
 int32_t msc_write(uint32_t lba, uint32_t offset, uint8_t *buffer, uint32_t bufsize)
 {
-    if (offset != 0) return -1;
+    if (offset != 0)
+        return -1;
 
     uint32_t sector_size = sdcard->csd.sector_size;
-    if (bufsize % sector_size != 0) return -1;
+    if (bufsize % sector_size != 0)
+        return -1;
 
     uint32_t count = bufsize / sector_size;
 
@@ -108,11 +112,9 @@ int32_t msc_write(uint32_t lba, uint32_t offset, uint8_t *buffer, uint32_t bufsi
     return (err == ESP_OK) ? bufsize : -1;
 }
 
-
 void msc_flush(void) {}
 
 /* ---------- HID helpers ---------- */
-
 
 /**
  * @brief Handle incoming request body
@@ -121,7 +123,8 @@ void msc_flush(void) {}
 void report(const std::string &body)
 {
     size_t sep = body.find('|');
-    if (sep == std::string::npos) {
+    if (sep == std::string::npos)
+    {
         log_e("Invalid report format");
         return;
     }
@@ -133,13 +136,13 @@ void report(const std::string &body)
     uint8_t keys[6] = {0};
     size_t key_count = 0;
     size_t pos = 0;
-    while (pos < keys_str.length() && key_count < 6) {
+    while (pos < keys_str.length() && key_count < 6)
+    {
         size_t next_pos = keys_str.find(',', pos);
-        std::string key_hex = (next_pos == std::string::npos) ? 
-                              keys_str.substr(pos) : 
-                              keys_str.substr(pos, next_pos - pos);
+        std::string key_hex = (next_pos == std::string::npos) ? keys_str.substr(pos) : keys_str.substr(pos, next_pos - pos);
         keys[key_count++] = (uint8_t)strtol(key_hex.c_str(), nullptr, 16);
-        if (next_pos == std::string::npos) break;
+        if (next_pos == std::string::npos)
+            break;
         pos = next_pos + 1;
     }
 
@@ -153,7 +156,7 @@ void report(const std::string &body)
     Keyboard.sendReport(&keysreport);
 }
 
-static std::map<AsyncWebServerRequest*, std::string> bodyMap;
+static std::map<AsyncWebServerRequest *, std::string> bodyMap;
 
 void onRequestBody(
     AsyncWebServerRequest *request,
@@ -167,22 +170,25 @@ void onRequestBody(
 
     // Reserve some space but cap it to reasonable size
     // to avoid huge allocations if total is bogus.
-    if (index == 0) {
+    if (index == 0)
+    {
         size_t cap = (total > 0 && total < 4096) ? total : 512;
         body.reserve(cap);
     }
 
-    body.append((const char*)data, len);
+    body.append((const char *)data, len);
 
     // Not finished yet
-    if (index + len != total) {
+    if (index + len != total)
+    {
         return;
     }
 
     // At this point, we have the full body
     log_i("%s", body.c_str());
 
-    if (request->url() == "/report") {
+    if (request->url() == "/report")
+    {
         report(body);
     }
 
@@ -204,12 +210,10 @@ void setup()
     /* RAW SD */
     initSD();
 
-    MSC.onRead([](uint32_t lba, uint32_t offset, void* buffer, uint32_t bufsize) {
-      return msc_read(lba, offset, buffer, bufsize);
-    });
-    MSC.onWrite([](uint32_t lba, uint32_t offset, uint8_t* buffer, uint32_t bufsize) {
-      return msc_write(lba, offset, buffer, bufsize);
-    });
+    MSC.onRead([](uint32_t lba, uint32_t offset, void *buffer, uint32_t bufsize)
+               { return msc_read(lba, offset, buffer, bufsize); });
+    MSC.onWrite([](uint32_t lba, uint32_t offset, uint8_t *buffer, uint32_t bufsize)
+                { return msc_write(lba, offset, buffer, bufsize); });
     MSC.vendorID("ESPRESSIF");
     MSC.productID("ESP32 SD Card");
     MSC.productRevision("1.0");
@@ -230,7 +234,7 @@ void setup()
     log_i("AP IP address: %s", WiFi.softAPIP().toString().c_str());
 
     server.on("/", HTTP_GET, [](AsyncWebServerRequest *r)
-        { r->send(LittleFS, "/index.html", "text/html"); });
+              { r->send(LittleFS, "/index.html", "text/html"); });
 
     server.onRequestBody(onRequestBody);
 
