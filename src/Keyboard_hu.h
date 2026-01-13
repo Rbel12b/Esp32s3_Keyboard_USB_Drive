@@ -7,7 +7,9 @@
 class Keyboard_hu
   : public KeyboardWriter
 {
-
+    void writeutf8(const std::string& utf8Char)  override
+    {
+    }
 };
 
 #endif
