@@ -4,8 +4,8 @@
 
 #include "Arduino.h"
 
-class KeyboardStream
-  : public Stream
+class KeyboardWriter
+  : public Print
 {
 public:
     size_t write(uint8_t)
