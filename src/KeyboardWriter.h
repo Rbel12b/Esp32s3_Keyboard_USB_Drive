@@ -6,6 +6,9 @@
 #include "string"
 #include "USBHIDKeyboard.h"
 
+#define MOD_RALT 0x40
+#define MOD_SHIFT 0x02
+
 class KeyboardWriter
     : public Print
 {

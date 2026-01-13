@@ -21,6 +21,12 @@ AsyncWebServer server(80);
 
 sdmmc_card_t *sdcard;
 
+#include "Keyboard_hu.h"
+
+Keyboard_hu huKeyboard([](KeyReport report) {
+    Keyboard.sendReport(&report);
+}, -1);
+
 /* ---------- SD RAW INIT ---------- */
 
 #define SD_MISO GPIO_NUM_14 // MISO
@@ -190,6 +196,10 @@ void onRequestBody(
     if (request->url() == "/report")
     {
         report(body);
+    }
+    else if (request->url() == "/text_hu")
+    {
+        huKeyboard.print(body.c_str());
     }
 
     request->send(200, "text/plain", "true");
