@@ -3,12 +3,13 @@
 #define _KEYBOARD_STRRAM_H_
 
 #include "Arduino.h"
+#include "string"
 
 class KeyboardWriter
   : public Print
 {
 public:
-    size_t write(uint8_t byte) {
+    size_t write(uint8_t byte) override {
         if (buffer.empty()) {
             expectedLength = utf8Length(byte);
         }
