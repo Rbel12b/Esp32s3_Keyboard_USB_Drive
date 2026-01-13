@@ -8,6 +8,9 @@ class KeyboardStream
   : public Stream
 {
 public:
+    size_t write(uint8_t)
+    {
+    }
 };
 
 #endif
