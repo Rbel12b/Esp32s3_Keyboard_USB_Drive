@@ -34,9 +34,7 @@ private:
         return 1; // fallback for invalid UTF-8
     }
 
-    void writeutf8(const std::string& utf8Char) {
-        
-    }
+    virtual void writeutf8(const std::string& utf8Char) = 0;
 };
 
 #endif
