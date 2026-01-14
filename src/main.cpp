@@ -242,6 +242,18 @@ void payload(const std::string &body)
                         report.keys[keyCount++] = KEY_F13 + (num - 13);
                     }
                 }
+                else if (key == "ENTER")
+                {
+                    if (keyCount >= MAX_KEYS)
+                        continue;
+                    report.keys[keyCount++] = 0x28;
+                }
+                else if (key == "SPACE")
+                {
+                    if (keyCount >= MAX_KEYS)
+                        continue;
+                    report.keys[keyCount++] = 0x2C;
+                }
                 else
                 {
                     if (keyCount >= MAX_KEYS)
