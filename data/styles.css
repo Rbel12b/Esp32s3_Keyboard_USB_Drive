@@ -1,0 +1,101 @@
+body {
+    background: #111;
+    color: #ddd;
+    font-family: sans-serif;
+    display: grid;
+    justify-content: center;
+}
+
+.keyboard {
+    background: #000;
+    padding: 12px;
+    border-radius: 10px;
+}
+
+.row {
+    display: flex;
+    margin-bottom: 4px;
+}
+
+.key {
+    background: #1a1a1a;
+    border: 1px solid #333;
+    color: #ddd;
+    margin: 2px;
+    padding: 6px;
+    min-width: 40px;
+    height: 40px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.key.wide {
+    min-width: 80px;
+}
+
+.key.xwide {
+    min-width: 110px;
+}
+
+.key.space {
+    min-width: 260px;
+}
+
+.key.mod.active {
+    outline: 2px solid red;
+}
+
+.key span.alt {
+    display: block;
+    font-size: 10px;
+    color: #aaa;
+}
+
+.key.pressed {
+    background: #333;
+}
+
+.textInput {
+    padding: 12px;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 400px;
+}
+
+textarea {
+    background: #1a1a1a;
+    color: #ddd;
+    border: 1px solid #333;
+    border-radius: 5px;
+    padding: 8px;
+    font-family: sans-serif;
+    font-size: 14px;
+    resize: both;
+    width: 95%;
+    min-height: 80px;
+    white-space: pre;
+    overflow-wrap: normal;
+    overflow-x: scroll;
+}
+
+button {
+    background: #1a1a1a;
+    border: 1px solid #333;
+    color: #ddd;
+    padding: 8px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.2s;
+}
+
+button:hover {
+    background: #333;
+}
+
+button:active {
+    background: #555;
+}
