@@ -13,6 +13,8 @@
 #include "driver/sdspi_host.h"
 #include <SPI.h>
 
+#include <sstream>
+
 /* ---------- Globals ---------- */
 
 USBHIDKeyboard Keyboard;
@@ -23,9 +25,8 @@ sdmmc_card_t *sdcard;
 
 #include "Keyboard_hu.h"
 
-Keyboard_hu huKeyboard([](KeyReport report) {
-    Keyboard.sendReport(&report);
-}, -1);
+Keyboard_hu huKeyboard([](KeyReport report)
+                       { Keyboard.sendReport(&report); }, -1);
 
 /* ---------- SD RAW INIT ---------- */
 
@@ -162,7 +163,117 @@ void report(const std::string &body)
     Keyboard.sendReport(&keysreport);
 }
 
+void payload(const std::string &body)
+{
+    std::istringstream stream(body);
+    std::string line;
+    while (std::getline(stream, line))
+    {
+        log_d("Payload line: %s", line.c_str());
+        if (line.length() < 5)
+            continue;
+        auto command = line.substr(0, 3);
+        if (line[3] != ' ')
+            continue;
+        auto argument = line.substr(4);
+        if (command == "KEY")
+        {
+            KeyReport report = {0, 0, {0, 0, 0, 0, 0, 0}};
+            uint8_t keyCount = 0;
+            uint8_t MAX_KEYS = 6;
+            std::istringstream argStream(argument);
+            std::string key;
+            while (std::getline(argStream, key, ' '))
+            {
+                if (key.empty())
+                    continue;
+
+                if (key == "WIN")
+                {
+                    report.modifiers |= MOD_LGUI;
+                }
+                else if (key == "RGUI")
+                {
+                    report.modifiers |= MOD_RGUI;
+                }
+                else if (key == "CTRL")
+                {
+                    report.modifiers |= MOD_CTRL;
+                }
+                else if (key == "RCTRL")
+                {
+                    report.modifiers |= MOD_RCTRL;
+                }
+                else if (key == "ALT")
+                {
+                    report.modifiers |= MOD_ALT;
+                }
+                else if (key == "RALT")
+                {
+                    report.modifiers |= MOD_RALT;
+                }
+                else if (key == "SHIFT")
+                {
+                    report.modifiers |= MOD_SHIFT;
+                }
+                else if (key == "RSHIFT")
+                {
+                    report.modifiers |= MOD_RSHIFT;
+                }
+                else if (key.length() >= 2 && key[0] == 'F')
+                {
+                    if (keyCount >= MAX_KEYS)
+                        continue;
+                    int num = 0;
+                    if (key.length() == 3)
+                    {
+                        num = (key[2] - '0') * 10 + (key[3] - '0');
+                    }
+                    else
+                    {
+                        num = key[2] - '0';
+                    }
+                    if (num <= 12)
+                    {
+                        report.keys[keyCount++] = KEY_F1 + (num - 1);
+                    }
+                    else
+                    {
+                        report.keys[keyCount++] = KEY_F13 + (num - 13);
+                    }
+                }
+                else
+                {
+                    if (keyCount >= MAX_KEYS)
+                        continue;
+                    if (huKeyboard.keyMap.count(key))
+                    {
+                        auto data = huKeyboard.keyMap[key];
+                        report.keys[keyCount++] = data.keyCode;
+                    }
+                }
+            }
+            Keyboard.sendReport(&report);
+            delayMicroseconds(100);
+            report = {0, 0, {0, 0, 0, 0, 0, 0}};
+            Keyboard.sendReport(&report);
+        }
+        else if (command == "DLY")
+        {
+            int delayMs = std::stoi(argument);
+            vTaskDelay(delayMs / portTICK_PERIOD_MS);
+        }
+        else if (command == "STR")
+        {
+            huKeyboard.print(argument.c_str());
+        }
+    }
+}
+
 static std::map<AsyncWebServerRequest *, std::string> bodyMap;
+
+std::string payload_hu_str = "";
+bool payload_hu_exec = false;
 
 void onRequestBody(
     AsyncWebServerRequest *request,
@@ -201,8 +312,16 @@ void onRequestBody(
     {
         huKeyboard.print(body.c_str());
     }
+    else if (request->url() == "/payload_hu")
+    {
+        payload_hu_str = body;
+    }
+    else if (request->url() == "/payload_hu_exec")
+    {
+        payload_hu_exec = true;
+    }
 
-    request->send(200, "text/plain", "true");
+    request->send(200);
 
     // Remove request from map
     bodyMap.erase(request);
@@ -262,6 +381,12 @@ void setup()
 
 void loop()
 {
-    vTaskDelay(100 / portTICK_PERIOD_MS);
-    heap_caps_check_integrity_all(true);
+    vTaskDelay(10 / portTICK_PERIOD_MS);
+    if (payload_hu_exec)
+    {
+        log_d("Executing payload...");
+        payload(payload_hu_str);
+        payload_hu_exec = false;
+        log_d("Payload executed.");
+    }
 }

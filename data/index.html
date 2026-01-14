@@ -64,7 +64,30 @@
             background: #333;
         }
 
+        .textInput {
+            background: #000;
+            padding: 12px;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            width: 400px;
+        }
+
         textarea#messageInput {
+            background: #1a1a1a;
+            color: #ddd;
+            border: 1px solid #333;
+            border-radius: 5px;
+            padding: 8px;
+            font-family: sans-serif;
+            font-size: 14px;
+            resize: vertical;
+            width: 100%;
+            min-height: 80px;
+        }
+
+        textarea#payloadInput {
             background: #1a1a1a;
             color: #ddd;
             border: 1px solid #333;
@@ -101,10 +124,17 @@
 <body>
     <div class="keyboard" id="kb"></div>
 
-    <div class="keyboard">
+    <div class="textInput">
         <textarea id="messageInput" rows="20" placeholder="Type some text..."></textarea>
         <button onclick="sendMessage(document.getElementById('messageInput').value)">
             Type
+        </button>
+    </div>
+
+    <div class="textInput">
+        <textarea id="payloadInput" rows="20" placeholder="KEY WIN R"></textarea>
+        <button onclick="sendPayload(document.getElementById('payloadInput').value)">
+            Exec
         </button>
     </div>
 
@@ -114,6 +144,18 @@
             fetch("/text_hu", {
                 method: "POST",
                 body: text
+            });
+        }
+
+        function sendPayload(text) {
+            fetch("/payload_hu", {
+                method: "POST",
+                body: text
+            }).then(() => {
+                fetch("/payload_hu_exec", {
+                    method: "POST",
+                    body: "true"
+                });
             });
         }
 
@@ -202,7 +244,7 @@
                 ["a", "ä", 0x04, "A", ""], ["s", "đ", 0x16, "S", ""], ["d", "Đ", 0x07, "D", ""], ["f", "[", 0x09, "F", ""],
                 ["g", "]", 0x0A, "G", ""], ["h", "", 0x0B, "H", ""], ["j", "í", 0x0D, "J", ""],
                 ["k", "ł", 0x0E, "K", ""], ["l", "Ł", 0x0F, "L", ""],
-                ["é", "$", 0x31, "É", ""], ["á", "ß", 0x2E, "Á", ""],
+                ["é", "$", 0x31, "É", ""], ["á", "ß", 0x34, "Á", ""],
                 ["Enter", "", 0x28, "xwide"]
             ],
             [

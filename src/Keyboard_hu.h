@@ -66,7 +66,7 @@ protected:
         // }
     }
 
-private:
+public:
     struct charInfo
     {
         uint8_t keyCode;
@@ -170,7 +170,7 @@ private:
             {"k", {0x0E, 0}},
             {"l", {0x0F, 0}},
             {"é", {0x31, 0}},
-            {"á", {0x2E, 0}},
+            {"á", {0x34, 0}},
 
             // A row with Shift
             {"A", {0x04, MOD_SHIFT}},

@@ -6,8 +6,14 @@
 #include "string"
 #include "USBHIDKeyboard.h"
 
+#define MOD_ALT 0x04
 #define MOD_RALT 0x40
 #define MOD_SHIFT 0x02
+#define MOD_RSHIFT 0x20
+#define MOD_LGUI 0x08
+#define MOD_RGUI 0x80
+#define MOD_CTRL 0x01
+#define MOD_RCTRL 0x10
 
 class KeyboardWriter
     : public Print
